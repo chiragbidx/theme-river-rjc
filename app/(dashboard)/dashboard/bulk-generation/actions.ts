@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/drizzle";
-import { getSessionUser } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -23,7 +23,7 @@ async function generateAIContent(keyword: string, templateStructure: any) {
 }
 
 export async function bulkGeneratePages(formData: FormData) {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
 
   const templateId = formData.get("templateId") as string;
@@ -69,7 +69,7 @@ export async function bulkGeneratePages(formData: FormData) {
 }
 
 export async function getPages() {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
   const pages = await db.page.findMany({
     where: { userId: user.id },
