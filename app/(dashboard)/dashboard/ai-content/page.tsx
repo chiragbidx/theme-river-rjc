@@ -1,50 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getPages } from "../bulk-generation/actions";
 
-function fakeAIContent(keyword: string) {
-  return `Unlock the best strategies for "${keyword}" with our in-depth guide and expert tips. Discover how PageForge generates conversion-optimized content at scale.`;
-}
+type Page = {
+  id: string;
+  url: string;
+  aiContent?: string;
+};
 
 export default function AIContentPage() {
-  const [keyword, setKeyword] = useState("");
-  const [result, setResult] = useState<string | null>(null);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [selectedPage, setSelectedPage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    // Simulate latency for AI
-    await new Promise((r) => setTimeout(r, 900));
-    setResult(fakeAIContent(keyword.trim()));
-    setLoading(false);
+  async function refreshPages() {
+    const pages = (await getPages()) as Page[];
+    setPages(pages || []);
+  }
+
+  useEffect(() => {
+    refreshPages();
+  }, []);
+
+  const handlePreview = (content: string) => {
+    setPreview(content);
   };
 
   return (
     <div className="space-y-8 max-w-2xl">
       <h1 className="text-2xl font-bold tracking-tight">AI Content</h1>
       <p className="text-muted-foreground">
-        Enter a keyword or topic below and generate optimized SEO content with AI.
+        View SEO-optimized, AI-generated content for your programmatic pages below.
       </p>
       <div className="border rounded-lg bg-muted p-6">
-        <label className="block font-semibold mb-1">Keyword / Topic</label>
-        <input
+        <label className="block font-semibold mb-1">Choose a Page</label>
+        <select
           className="w-full rounded border px-3 py-2 mb-3"
-          placeholder="e.g. best project management tools"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-        <button
-          className="rounded bg-primary px-4 py-2 text-white font-bold hover:bg-primary/90 disabled:opacity-50"
-          disabled={!keyword.trim() || loading}
-          onClick={handleGenerate}
+          value={selectedPage || ""}
+          onChange={(e) => {
+            setSelectedPage(e.target.value);
+            setPreview(null);
+          }}
         >
-          {loading ? "Generating..." : "Generate Content"}
-        </button>
+          <option value="">-- Select --</option>
+          {pages.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.url}
+            </option>
+          ))}
+        </select>
+        {selectedPage && (
+          <button
+            className="rounded bg-primary px-4 py-2 text-white font-bold hover:bg-primary/90 ml-1"
+            onClick={() => {
+              const found = pages.find((p) => p.id === selectedPage);
+              setLoading(true);
+              setTimeout(() => {
+                handlePreview(found?.aiContent || "");
+                setLoading(false);
+              }, 700);
+            }}
+          >
+            {loading ? "Loading..." : "Preview Content"}
+          </button>
+        )}
       </div>
-      {result && (
+      {preview && (
         <div className="border-l-4 border-primary bg-primary/5 rounded p-4 mt-4">
           <div className="font-bold mb-2">Generated Content</div>
-          <div>{result}</div>
+          <div>{preview}</div>
         </div>
       )}
     </div>
