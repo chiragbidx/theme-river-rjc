@@ -16,15 +16,19 @@ export async function importKeywords(formData: FormData) {
   const parsed = keywordsSchema.safeParse({ keywords: rawKeywords });
   if (!parsed.success) return { error: parsed.error.errors[0].message };
 
-  await db.keyword.createMany({
-    data: parsed.data.keywords.map(value => ({
-      value,
-      userId: user.id,
-    })),
-    skipDuplicates: true,
-  });
-  revalidatePath("/dashboard/keyword-importer");
-  return { success: true };
+  try {
+    await db.keyword.createMany({
+      data: parsed.data.keywords.map(value => ({
+        value,
+        userId: user.id,
+      })),
+      skipDuplicates: true,
+    });
+    revalidatePath("/dashboard/keyword-importer");
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "Import failed" };
+  }
 }
 
 export async function getKeywords() {
@@ -41,7 +45,7 @@ export async function getKeywords() {
 export async function deleteKeyword(id: string) {
   const user = await getSessionUser();
   if (!user) throw new Error("Unauthorized");
-  await db.keyword.delete({
+  await db.keyword.deleteMany({
     where: { id, userId: user.id },
   });
   revalidatePath("/dashboard/keyword-importer");
