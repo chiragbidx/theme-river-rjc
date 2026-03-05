@@ -1,7 +1,7 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { getSessionUser } from "@/lib/auth/session";
+import { db } from "@/lib/db/drizzle";
+import { getSession } from "@/lib/auth/session";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -10,7 +10,7 @@ const keywordsSchema = z.object({
 });
 
 export async function importKeywords(formData: FormData) {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
   const rawKeywords = (formData.getAll("keywords") as string[]).filter(Boolean);
   const parsed = keywordsSchema.safeParse({ keywords: rawKeywords });
@@ -32,7 +32,7 @@ export async function importKeywords(formData: FormData) {
 }
 
 export async function getKeywords() {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
 
   const keywords = await db.keyword.findMany({
@@ -43,7 +43,7 @@ export async function getKeywords() {
 }
 
 export async function deleteKeyword(id: string) {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
   await db.keyword.deleteMany({
     where: { id, userId: user.id },
