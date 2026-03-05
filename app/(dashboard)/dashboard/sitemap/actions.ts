@@ -1,10 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db/drizzle";
-import { getSessionUser } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 
 export async function getSitemapUrls() {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
 
   const pages = await db.page.findMany({
