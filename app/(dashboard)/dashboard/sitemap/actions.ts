@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/drizzle";
 import { getSessionUser } from "@/lib/auth/session";
 
 export async function getSitemapUrls() {
