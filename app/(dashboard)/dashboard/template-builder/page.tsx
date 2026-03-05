@@ -1,57 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  createTemplate,
+  getTemplates,
+  deleteTemplate,
+} from "./actions";
 
 type Template = {
-  id: number;
+  id: string;
   name: string;
-  structure: string;
+  structure: any;
+  createdAt: string;
 };
 
 export default function TemplateBuilderPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [name, setName] = useState("");
   const [structure, setStructure] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
+  async function refreshTemplates() {
+    setLoading(true);
+    const data = await getTemplates();
+    setTemplates((Array.isArray(data) ? data : []) as Template[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    refreshTemplates();
+  }, []);
+
+  const handleSave = async () => {
+    setError(null);
     if (!name.trim() || !structure.trim()) return;
-    if (editingId !== null) {
-      setTemplates((prev) =>
-        prev.map((tpl) =>
-          tpl.id === editingId
-            ? { ...tpl, name, structure }
-            : tpl
-        )
-      );
-      setEditingId(null);
+    let formData = new FormData();
+    formData.append("name", name);
+    formData.append("structure", structure);
+    const result = await createTemplate(formData);
+    if (result?.error) {
+      setError(result.error);
     } else {
-      setTemplates((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          name,
-          structure,
-        },
-      ]);
+      setName("");
+      setStructure("");
+      setEditingId(null);
+      await refreshTemplates();
     }
-    setName("");
-    setStructure("");
   };
 
   const handleEdit = (tpl: Template) => {
     setEditingId(tpl.id);
     setName(tpl.name);
-    setStructure(tpl.structure);
+    setStructure(JSON.stringify(tpl.structure, null, 2));
   };
 
-  const handleDelete = (id: number) => {
-    setTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
+  const handleDelete = async (id: string) => {
+    await deleteTemplate(id);
     if (editingId === id) {
       setName("");
       setStructure("");
       setEditingId(null);
     }
+    await refreshTemplates();
   };
 
   return (
@@ -95,10 +107,15 @@ export default function TemplateBuilderPage() {
             Cancel
           </button>
         )}
+        {error && (
+          <div className="text-red-600 mt-2">{error}</div>
+        )}
       </div>
       <div>
         <h2 className="text-lg font-semibold mb-2">Saved Templates</h2>
-        {templates.length === 0 ? (
+        {loading ? (
+          <div>Loading templates...</div>
+        ) : templates.length === 0 ? (
           <div className="text-muted-foreground">No templates yet.</div>
         ) : (
           <ul className="space-y-3">
@@ -124,7 +141,9 @@ export default function TemplateBuilderPage() {
                     </button>
                   </div>
                 </div>
-                <pre className="mt-2 bg-muted text-sm p-2 rounded overflow-x-auto">{tpl.structure}</pre>
+                <pre className="mt-2 bg-muted text-sm p-2 rounded overflow-x-auto">
+                  {JSON.stringify(tpl.structure, null, 2)}
+                </pre>
               </li>
             ))}
           </ul>
