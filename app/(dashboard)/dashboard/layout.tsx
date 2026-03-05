@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -31,7 +33,7 @@ const navItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  const pathname = usePathname();
 
   return (
     <div className="flex min-h-screen w-full">
