@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/drizzle";
-import { getSessionUser } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -11,7 +11,7 @@ const templateSchema = z.object({
 });
 
 export async function createTemplate(formData: FormData) {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
 
   const data = {
@@ -37,7 +37,7 @@ export async function createTemplate(formData: FormData) {
 }
 
 export async function getTemplates() {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
 
   const templates = await db.template.findMany({
@@ -48,7 +48,7 @@ export async function getTemplates() {
 }
 
 export async function deleteTemplate(id: string) {
-  const user = await getSessionUser();
+  const user = await getSession();
   if (!user) throw new Error("Unauthorized");
   await db.template.deleteMany({
     where: { id, userId: user.id },
